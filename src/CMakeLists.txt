@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.10)
-project(T04_C C)
+project(Trajectories_IGRF_T04_C C)
 
 # =============================
 # BUILD SETTINGS
@@ -37,7 +37,7 @@ if(TRAJECTORY_TEST)
 endif()
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DDEF_TU=${TU}")
 
-add_executable(T04_C main.c birk_tot.c birk_tot.h btot.c btot.h deformed.c deformed.h full_rc.c full_rc.h
+add_executable(Trajectories_IGRF_T04_C main.c birk_tot.c birk_tot.h btot.c btot.h deformed.c deformed.h full_rc.c full_rc.h
                             positions.c positions.h recalc.c recalc.h utility.c utility.h test.c test.h)
 
-target_link_libraries(T04_C m)
+target_link_libraries(Trajectories_IGRF_T04_C m)
