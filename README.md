@@ -18,9 +18,9 @@ For building your own executable binary, you need to have installed the followin
 
 Assuming you have already cloned this repository (or downloaded and extracted ZIP archive):
 
-1. Type `cmake -S ./src -B ./build` in a terminal to create necessary Make files;
-2. Navigate to build directory: `cd build`;
-3. Type `make` to compile the code. Executable binary with the name `T04_C` will be created in `build` directory.
+1. Navigate to the project directory
+2. Type `./build.sh` into the teminal
+3. Executable binary `Trajectories_IGRF_T04_C` will be created inside `build` directory
 
 ## How to run the simulation
 
@@ -33,10 +33,10 @@ This program requires several input parameters:
 5. `<number of steps>` - Max. number of the steps of the simulation.
 
 Assuming you already have an executable binary, you can execute the program by running:
-`./T04_C <INFILE> <OUTFILE> <IGRF_VER> <seq/par> <number of steps>`.
+`./Trajectories_IGRF_T04_C <INFILE> <OUTFILE> <IGRF_VER> <seq/par> <number of steps>`.
 
 In simplest versions with input file in same directory as code, command to run compiled code has the form:
-`./T04_C infile outfile 13 par 25000`.
+`./Trajectories_IGRF_T04_C infile outfile 13 par 25000`.
 
 ### Infile example
 
@@ -88,6 +88,10 @@ This file consists of 2 parts:
 - Calculated data - contains trajectory parameters of cosmic rays particle with given rigidity in given time and location. Last line of the outfile includes 3 values, which describes lower, upper and effective cutoff rigidity.
 
 > Note: This file contains different data when the precision testing binary finished executing and `PRINT_TRAJECTORY` was set to `TRUE` in `CMakeList.txt`. (See below)
+
+## Program flowchart
+
+![Program flowchart](./docs/flowchart.jpg)
 
 ## Precision testing
 
