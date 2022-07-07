@@ -16,29 +16,49 @@ int main(int argc, char *argv[]) {
 
     const double start_time = omp_get_wtime();
 
-    #ifdef TRAJ_TEST
+#ifdef TRAJ_TEST
     print_test_notif();
-    #endif
+#endif
 
-    int step_limit = 0, igrf_coefs_version = 0;
-    if(argc != 6 || (strncmp(argv[4], "seq", 3) != 0 && strncmp(argv[4], "par", 3) != 0)) {
-        throwError("Error: Invalid arguments\nUsage: executable <INFILE> <OUTFILE> <IGRF_VER> <seq/par> <number of steps>\n");
+    unsigned int step_limit = 0, igrf_coefs_version = 0;
+
+#ifdef TRAJ_TEST
+    float epsilon = .01f;
+    if(argc != 6) {
+        throwError("Error: Invalid arguments\nUsage: executable <infile> <outfile> <igrf_ver> <number_of_steps> <epsilon>\n");
     } else {
         char *p;
-        long conv = strtol(argv[3], &p, 10);
-        if(errno != 0 || *p != '\0' || conv < 9 || conv > 13) {
+        igrf_coefs_version = strtol(argv[3], &p, 10);
+        if(errno != 0 || *p != '\0' || igrf_coefs_version < 9 || igrf_coefs_version > 13) {
             throwError("Error: Invalid version of IGRF coefficients.\n");
-        } else {
-            igrf_coefs_version = conv;
         }
 
-        conv = strtol(argv[5], &p, 10);
-        if (errno != 0 || *p != '\0' || conv > INT_MAX) {
+        step_limit = strtol(argv[4], &p, 10);
+        if (errno != 0 || *p != '\0') {
             throwError("Error: Value of the step limit was not valid.\n");
-        } else {
-            step_limit = conv;
+        }
+
+        epsilon = strtof(argv[5], &p);
+        if (errno != 0 || *p != '\0') {
+            throwError("Error: Value of the epsilon was not valid.\n");
         }
     }
+#else
+    if(argc != 6 || (strncmp(argv[4], "seq", 3) != 0 && strncmp(argv[4], "par", 3) != 0)) {
+        throwError("Error: Invalid arguments\nUsage: executable <infile> <outfile> <igrf_ver> <seq/par> <number_of_steps>\n");
+    } else {
+        char *p;
+        igrf_coefs_version = strtol(argv[3], &p, 10);
+        if(errno != 0 || *p != '\0' || igrf_coefs_version < 9 || igrf_coefs_version > 13) {
+            throwError("Error: Invalid version of IGRF coefficients.\n");
+        }
+
+        step_limit = strtol(argv[5], &p, 10);
+        if (errno != 0 || *p != '\0') {
+            throwError("Error: Value of the step limit was not valid.\n");
+        }
+    }
+#endif
 
     double rig = 0., del = 0.;
     float rni = 0.f, zn = 0.f, rk = 0.f, r0 = 0.f, the0 = 0.f, fi0 = 0.f, the1 = 0.f, fi1 = 0.f, PARMOD[10] = {0};
@@ -64,14 +84,14 @@ int main(int argc, char *argv[]) {
             throwError("Error: Invalid number of variables or wrong data are present in the infil file.\n");
         }
         if(del <= 0.){
-            throwError("Error: Step value in %s has to be higher than 0.0\n");
+            throwError("Error: Step value in rigidity has to be higher than 0.0\n");
         }
 
-        #ifdef TRAJ_TEST
+#ifdef TRAJ_TEST
         if((float) rig != rk) {
             throwError("Error: START and END rigidity must be same for the test.\n");
         }
-        #endif
+#endif
 
         fclose(infil);
         rni = rig;
@@ -87,32 +107,26 @@ int main(int argc, char *argv[]) {
     //static const int nr = 1; // UNUSED
 
     FILE *outfil = fopen(argv[2], "w");
+    if(!outfil) {
+        throwError("Error: Output file could not be created\n");
+    }
 
-    #ifndef TRAJ_TEST
-    
-    fprintf(outfil, "\n\n\n\t\t\t\tASYMPTOTIC COORDINATES\n"
-                    "\t\tcalculated by model of exter.field T05\n"
-                    " Station with geo.latitude: %.3f & longitude: %.3f & radius: %.5f\n"
-                    " Direction of trajectory with latitude: %.3f & longitude: %.3f\n"
-                    " Date: %d %d %d time: %d hod %d min %d sec\n"
-                    " Starting rigidity: %g GV Epsilon=%lf\n Limit of total number of steps: %d\n\n"
+#ifdef TRAJ_TEST
+    write_test_outfil_header(outfil, rig);
+    const int run_in_parallel = 0;
+    float max_rd = 0;
+#else
+    fprintf(outfil, "\n\n\n                ASYMPTOTIC COORDINATES\n"
+                    "   calculated by model of exter.field T05   \n"
+                    " Station with geo.latitude:%9.3f  & longitude:%9.3f & radius : %8.5f\n"
+                    " Direction of trajectory with latitude: %9.3f & longitude: %9.3f\n"
+                    " Date: %4d %2d %2d  time: %2d hod %2d min %2d sec\n"
+                    " Starting rigidity : %8.4f GV Epsilon=%7.4f\n Limit of total number of steps : %d \n\n"
                     " rig : v : rad : eth : efi : ath : afi : time : length\n",
                     the0, fi0, r0, the1, fi1, iy, mes, ide, ih, min, is, rig, del, step_limit);
 
     const int run_in_parallel = strncmp(argv[4], "par", 3) == 0 ? 1 : 0;
-
-    #else
-    
-    fprintf(outfil, "Particle's rigidity: %g\nIntensity of magnetic field: X = %lf, Y = %lf, Z = %lf\n",
-        rig, (double) DEF_BX, (double) DEF_BY, (double) DEF_BZ);
-
-    #ifdef PRINT_TRAJECTORY
-    fprintf(outfil, "\nx\ty\tz\tr\ttheta\tphi\ttime\n");
-    #endif
-
-    const int run_in_parallel = 0;
-
-    #endif
+#endif
 
     float G[105], H[105], REC[105], A1[3], A2[3], A3[3];
     recalc(igrf_coefs_version, iy, &id, &ih, &min, &is, G, H, REC, A1, A2, A3);
@@ -123,7 +137,7 @@ int main(int argc, char *argv[]) {
     #pragma omp parallel for ordered schedule(dynamic, 1) reduction(+:nza) if (run_in_parallel)
     for(int i = 0; i <= rig_values_size; i++) {
         double threadRig = rig + i*del;
-        float alength = 0.f, time = 0.f, sumaaion = 0.f;
+        float alength = 0.f, time = 0.f;
         int nk0 = nk1;
         float a = threadRig*1.0e+09*zn*q / (hm0*c*c);
         float v = c * sqrtf(1.f - 1.f/(1.f + a*a));
@@ -155,7 +169,7 @@ int main(int argc, char *argv[]) {
         float vy = v*sinf(th1)*sinf(f1);
         float vz = v*cosf(th1);
         float vv = v;
-        int jj = 0;
+        unsigned int jj = 0;
         do{
             jj++;
 
@@ -183,20 +197,13 @@ int main(int argc, char *argv[]) {
             if(gc < 1.f){
                 const float gs = sqrtf((1.f-gc) * (1.f+gc));
                 const float gu = atan2f(gs, gc);
-                //const float tu = 0.01f; // v28 implement as macro
+#ifdef TRAJ_TEST
+                if(gu >= epsilon && nk0 <= 50000){
+#else
                 if(gu >= DEF_TU && nk0 <= 50000){
+#endif
                     reassign_previous_coordinates(&nk0, &x, &y, &z, &xp, &yp, &zp, &vx, &vy, &vz, &vxp, &vyp, &vzp);
-
-                    sphcar(&rr, &th, &f, &x, &y, &z, -1);
-                    geogsm(&x, &y, &z, &xs, &ys, &zs, 1, A1, A2, A3);
-
-                    set_double_coordinates(&xx, &yy, &zz, &xs, &ys, &zs, &Re);
-
                     jj--;
-                    btot(&xx, &yy, &zz, G, H, REC, A1, A2, A3, PARMOD, &bxs, &bys, &bzs);
-                    geogsm_b(&bx, &by, &bz, &bxs, &bys, &bzs, -1, A1, A2, A3);
-
-                    b = 1.E-09f * sqrtf(bx*bx + by*by + bz*bz);
                     continue;
                 }
             }
@@ -215,8 +222,23 @@ int main(int argc, char *argv[]) {
             td = 90.f - teh;
             fei = f/rad;
 
-            #ifndef TRAJ_TEST
+#ifdef TRAJ_TEST
+            float new_rd = fabsf(r - r0) * Re;
+            if(new_rd > max_rd) {
+                max_rd = new_rd;
+            }
 
+#ifdef WRITE_TRAJ
+            if(jj % DEF_WRITE_STEP == 0) {
+                write_test_outfil_line(outfil, x, y, z, rr, th, f, time, max_rd);
+            }
+#endif
+#ifdef CHECK_R
+            if(new_rd > DEF_MAX_RD) {
+                break;
+            }
+#endif
+#else // TRAJ_TEST
             if(r > 25.f || paus > 1.f){
                 if((r > 25.f && fabsf(r - 25.f) < 0.002f) || (r <= 25.f && paus > 1.f && fabsf(paus - 1.f) < 0.002f)){
                     #pragma omp atomic write
@@ -228,17 +250,7 @@ int main(int argc, char *argv[]) {
                 }
 
                 reassign_previous_coordinates(&nk0, &x, &y, &z, &xp, &yp, &zp, &vx, &vy, &vz, &vxp, &vyp, &vzp);
-
-                sphcar(&rr, &th, &f, &x, &y, &z, -1);
-                geogsm(&x, &y, &z, &xs, &ys, &zs, 1, A1, A2, A3);
-
-                set_double_coordinates(&xx, &yy, &zz, &xs, &ys, &zs, &Re);
-
                 jj--;
-                btot(&xx, &yy, &zz, G, H, REC, A1, A2, A3, PARMOD, &bxs, &bys, &bzs);
-                geogsm_b(&bx, &by, &bz, &bxs, &bys, &bzs, -1, A1, A2, A3);
-
-                b = 1.E-09f * sqrtf(bx*bx + by*by + bz*bz);
                 continue;
             }
 
@@ -251,18 +263,7 @@ int main(int argc, char *argv[]) {
                 set_rmx_value(&nza, &rmx2, &threadRig);
                 break;
             }
-
-            #else
-
-            #ifdef PRINT_TRAJECTORY
-            fprintf(outfil, "%f\t%f\t%f\t%f\t%f\t%f\t%f\n", x, y, z, r, th, f, time);
-            #endif
-
-            if(fabsf(r - r0) > DEF_MAX_RD) {
-                break;
-            }
-
-            #endif
+#endif // TRAJ_TEST
 
             geogsm(&x, &y, &z, &xs, &ys, &zs, 1, A1, A2, A3);
 
@@ -283,67 +284,27 @@ int main(int argc, char *argv[]) {
             alength = alength + a1length;
 
             rr = sqrtf(x*x + y*y + z*z);
-            float rrp = sqrtf((xp*xp) + (yp*yp) + (zp*zp));
-            const float satm1 = rrp;
-            const float satm = a1length;
-            const float alfa = (x-xp) / satm;
-            const float beta = (y-yp) / satm;
-            const float gama = (z-zp) / satm;
-            const float alfa1 = xp / satm1;
-            const float beta1 = yp / satm1;
-            const float gama1 = zp / satm1;
-
-            const float omega = alfa*alfa1 + beta*beta1 + gama*gama1;
-            const float x1 = (rrp - Re)/1000.f;
-            const float x2 = (rr - Re)/1000.f;
-            float ro = 0.f;
-            if (x1 < 200 && x2 < 200){
-                ro = (1000.f / fabsf(omega)) * fabsf(1.24758f*8.60995f*(expf(-x1/8.609f) - expf(-x2/8.609f))) / 10.f;
-            } else if (x1 > 200 && x2 > 200){
-                ro = (1000.f / fabsf(omega)) * fabsf(2.9561E-10f * 48.99094f * (expf(-(x1 - 216.3f)/48.99094f) -
-                                                                                expf(-(x2 - 216.3f)/48.99094f))) / 10.f;
-            } else if (x2 > 200 && x1 < 200){
-                ro = (1000.f / fabsf(omega)) * (fabsf(1.24758f*8.60995f*(expf(-200/8.609f) - expf(-x1/8.609f))) +
-                                                fabsf(2.9561E-10f*(expf(-(200.f - 216.3f)/48.99094f) -
-                                                expf(-(x1-216.3f)/48.99094f)))) / 10.f;
-            }
-
-            const float aiond = 0.3070E6f;
-            const float aionzmed = 1.f;
-            const float aionromed = ro / a1length;
-            const float aionamed = 1.f;
-
-            const float aionI = 16.f * powf(aionzmed, 0.9f);
-            const float aionarg = (0.511E6f*2*vv*vv) / (1.f - (vv*vv)/(c*c));
-            const float aionbeta = vv/c;
-
-            const float aion = ((aiond*aionzmed*aionromed)/aionamed) * (1.f/aionbeta) * (1.f/aionbeta) *
-                               ((logf(aionarg/aionI)) - (aionbeta*aionbeta)) * a1length;
-
-            sumaaion = sumaaion + aion;
             nk0 = nk1;
         }while(jj <= step_limit);
 
-        #ifdef TRAJ_TEST
-        
+#if defined (TRAJ_TEST) && defined (CHECK_R)
         if(jj >= step_limit) {
-            printf("\033[0;32mTEST SUCCESSFUL\033[0m\n");
+            printf("TEST PASSED\n");
         } else {
-            printf("\033[0;31mTEST NOT SUCCESSFUL\033[0m\nFailed on step: %d/%d\n", jj, step_limit);
+            printf("TEST FAILED\nRadius exceeded allowed deviation of %d.\nFailed on step: %d/%d\n", DEF_MAX_RD, jj, step_limit);
         }
-
-        #endif
+#endif
     }
 
-    #ifndef TRAJ_TEST
+#ifndef TRAJ_TEST
     calculate_cutoff(outfil, &rmx1, &rmx2, &nza, &rmi, &rni, &del);
-    #endif
+#endif
     
     fclose(outfil);
 
-    #ifndef TRAJ_TEST
+#ifndef TRAJ_TEST
     printf("\nINFO: Successfully finished...\n");
-    #endif
+#endif
 
     printf("The simulation took %lf seconds to finish...\n",
             omp_get_wtime() - start_time);

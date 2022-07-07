@@ -1,12 +1,12 @@
 # Trajectory simulation of cosmic rays in the Earth's magnetosphere
 
-This simulation produces calculated values of cut-off rigidities for cosmic ray trajectories, which describes spectrum of allowed and forbidden rigidities.
+This program produces calculated values of cut-off rigidities for cosmic ray trajectories, which describes spectrum of allowed and forbidden rigidities.
 
-This program uses **Tsyganenko 04** model for simulating Earth's external magnetic field and **IGRF** (gen. 9 - 13) for simulating Earth's internal magnetic field. It was developed as refactoring of *Institute of Experimental Physics, Slovak Academy of Sciences* Fortran code.
+Program uses **Tsyganenko 04** model for simulating Earth's external geomagnetic field and **IGRF** (gen. 9 - 13) for simulating Earth's internal geomagnetic field. It was developed as refactoring of *Institute of Experimental Physics, Slovak Academy of Sciences* Fortran code.
 
 > This is part of [cor.crmodels.org](https://cor.crmodels.org/) project.
 
-## Compilation
+## Build instructions
 
 For building your own executable binary, you need to have installed the following prerequisites:
 
@@ -14,31 +14,56 @@ For building your own executable binary, you need to have installed the followin
 - [Make](https://www.gnu.org/software/make/) - v4.2.1 or newer
 - [GCC](https://gcc.gnu.org/) - v9.3 (recommended)
 
-### Building instructions
-
 Assuming you have already cloned this repository (or downloaded and extracted ZIP archive):
 
 1. Navigate to the project directory
 2. Type `./build.sh` into the teminal
 3. Executable binary `Trajectories_IGRF_T04_C` will be created inside `build` directory
 
+Alternatively you can build a docker image and run this simulation in a containerized environment. In this case, you only need to have [Docker](https://www.docker.com/get-started/) installed on your machine.
+
+1. Navigate to the project directory
+2. Type `./build-image.sh` into the teminal. This script executes `docker build` command in order to build the image called `trajectories_igrf_t04_c` from the source with the `latest` tag.
+
 ## How to run the simulation
 
 This program requires several input parameters:
 
-1. `<INFILE>` - file, that contains data necessary for the simulation.;
-2. `<OUTFILE>` - file, into which the results will be saved;
-3. `<IGRF_VER>` - Version of IGRF coefficients (value: 9 - 13);
-4. `<seq/par>` - Sequential or parallel computation;
-5. `<number of steps>` - Max. number of the steps of the simulation.
+1. `<infile>` - file, that contains data necessary for the simulation,
+2. `<outfile>` - file, into which the results will be saved,
+3. `<igrf_ver>` - Version of IGRF coefficients (value: 9 - 13),
+4. `<seq/par>` - Sequential (seq) or parallel (par) computation,
+5. `<number of steps>` - Max. number of steps for single trajectory calculation.
 
 Assuming you already have an executable binary, you can execute the program by running:
-`./Trajectories_IGRF_T04_C <INFILE> <OUTFILE> <IGRF_VER> <seq/par> <number of steps>`.
+`./Trajectories_IGRF_T04_C <infile> <outfile> <igrf_ver> <seq/par> <number of steps>`.
 
-In simplest versions with input file in same directory as code, command to run compiled code has the form:
-`./Trajectories_IGRF_T04_C infile outfile 13 par 25000`.
+More specific command for running the simulation with the input file located in the same directory as the executable: `./Trajectories_IGRF_T04_C infile outfile 13 par 25000`. In this case, 13th generation of the IGRF model is used, simulation will run in parallel mode with maximum of 25000 steps for single trajectory calculation.
 
-### Infile example
+## How to run the simulation in containerized environment
+
+If you want to run the simulation in docker container, it is necessary to create bind mount or named volume for data persistance. We recommend using bind mount as it is easier to work with. For that, you need to create directory called `data`, which will be mapped to container's file system. In this directory you need to have appropriate input file created.
+
+Assuming you have already built the image, you can use following command to create the container and run the simulation: 
+
+```sh
+docker run --name trajectories_igrf_t04_c -v $(pwd)/data:/var/data -e INFILE=infile trajectories_igrf_t04_c
+```
+
+This command will create container named `trajectories_igrf_t04_c`, from the image `trajectories_igrf_t04_c`, with the directory `./data` mapped to the `/var/data` directory inside container and run the simulation. When you have the container created, you can run the simulation again by executing: `docker start -a trajectories_igrf_t04_c`.
+
+In order to remove existing container, run `docker rm trajectories_igrf_t04_c`. There is a flag `--rm` you can use with `docker run` command. This will cause the created container to 
+be automatically removed after it exits.
+
+Environment variables:
+
+- `INFILE` **(required)** - Name of the infile
+- `OUTFILE` - Name of the outfile (default: `outfile`)
+- `IGRF` - Version of IGRF coefficients (default: `13`)
+- `MODE` - Mode of the computation. Use `seq` for sequential and `par` for parallel calculation (default: `par`)
+- `STEPS` - Max. number of steps for single trajectory calculation (default: `25000`)
+
+## Input file example
 
 ```
   2.5000  -1.   20.0000
@@ -60,9 +85,7 @@ In simplest versions with input file in same directory as code, command to run c
 7. Line: W1 - W6 input parameters for external geomagnetic field model (Tsyganenko) which describes prehistory of geomagnetic field.
 8. Line: `-1.00` marks the end of the input file.
 
-> Note: Starting rigidity and ending rigidity must be the same if you want to run a precision test.
-
-### Outfile example
+## Output file example
 
 ```
 ASYMPTOTIC COORDINATES
@@ -87,13 +110,6 @@ This file consists of 2 parts:
 - Header - contains simulation metadata (geographic coordinates, date and time, Epsilon - step in rigidity, maximum number of steps used for backtracing of one trajectory)
 - Calculated data - contains trajectory parameters of cosmic rays particle with given rigidity in given time and location. Last line of the outfile includes 3 values, which describes lower, upper and effective cutoff rigidity.
 
-> Note: This file contains different data when the precision testing binary finished executing and `PRINT_TRAJECTORY` was set to `TRUE` in `CMakeList.txt`. (See below)
-
 ## Program flowchart
 
 ![Program flowchart](./docs/flowchart.jpg)
-
-## Precision testing
-
-This code is a refactored version of already existing Fortran implementation, which was heavily tested in the past. Therefore we can assume, that the logic behind all calculations should be right. But it is possible, that some errors were introduced during the refactoring. Therefore the code is currently being tested again mainly for cumulative errors.
-[See more](./docs/testing.md) 

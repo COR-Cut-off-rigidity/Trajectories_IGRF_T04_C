@@ -722,14 +722,16 @@ void calc_ffs(const double *A, const double *A0, const double *DA, double *F, do
 void rc_shield(const double *A, const float *PS, const double *X_SC, const double *X, const double *Y, const double *Z,
                double *BX, double *BY, double *BZ){
 
-    const double FAC_SC = custom_pow((*X_SC + 1.), 3);
+    const double X_SC1 = *X_SC + 1.;
+    const double FAC_SC = X_SC1 * X_SC1 * X_SC1;
 
-    const double CPS = cosf(*PS);
     const double SPS = sinf(*PS);
+    const double CPS = cosf(*PS);
     const double S3PS = 2.*CPS;
 
     const double PST1 = *PS*A[84];
     const double PST2 = *PS*A[85];
+
     const double ST1 = sin(PST1);
     const double CT1 = cos(PST1);
     const double ST2 = sin(PST2);
@@ -740,104 +742,134 @@ void rc_shield(const double *A, const float *PS, const double *X_SC, const doubl
     const double X2 = *X*CT2 - *Z*ST2;
     const double Z2 = *X*ST2 + *Z*CT2;
 
-    int L = 0;
-    double GX = 0.;
-    double GY = 0.;
-    double GZ = 0.;
-    double P, Q, CYPI, CYQI, SYPI, SYQI, R, S, SZRK, CZSK, CZRK, SZSK, SQPR, SQQS,
-            EPR, EQS, FX, FY, FZ, HX, HY, HZ, HXR, HZR;
-    for(int i = 1; i <= 2; i++){
-        for(int j = 1; j <= 3; j++){
-            P = A[71+j];
-            Q = A[77+j];
-            CYPI = cos(*Y/P);
-            CYQI = cos(*Y/Q);
-            SYPI = sin(*Y/P);
-            SYQI = sin(*Y/Q);
+    int L = 3;
+    double GX = 0., GY = 0., GZ = 0.;
 
-            double P_SQPR = 1./ custom_pow(P, 2);
-            double Q_SQQS = 1./ custom_pow(Q, 2);
+    for(int j = 1; j <= 3; j++){
+        const double P = A[71+j];
+        const double YP = *Y / P;
+        const double SYPI = sin(YP);
+        const double CYPI = cos(YP);
+        const double P_SQPR = 1./ (P * P);
 
-            for(int k = 1; k <= 3; k++){
-                R = A[74+k];
-                S = A[80+k];
-                SZRK = sin(Z1/R);
-                CZSK = cos(Z2/S);
-                CZRK = cos(Z1/R);
-                SZSK = sin(Z2/S);
-                SQPR = sqrt(P_SQPR + 1./ custom_pow(R, 2));
-                SQQS = sqrt(Q_SQQS + 1./ custom_pow(S, 2));
-                EPR = exp(X1*SQPR);
-                EQS = exp(X2*SQQS);
-                for(int l = 1; l <= 2; l++){
-                    for(int m = 1; m <= 2; m++){
-                        if(i == 1){
-                            FX = -SQPR*EPR*CYPI*SZRK*FAC_SC;
-                            FY = EPR*SYPI*SZRK/P*FAC_SC;
-                            FZ = -EPR*CYPI*CZRK/R*FAC_SC;
-                            if(l == 1){
-                                if(m == 1) {
-                                    HX = FX;
-                                    HY = FY;
-                                    HZ = FZ;
-                                } else {
-                                    HX = FX**X_SC;
-                                    HY = FY**X_SC;
-                                    HZ = FZ**X_SC;
-                                }
-                            } else {
-                                if(m == 1){
-                                    HX = FX*CPS;
-                                    HY = FY*CPS;
-                                    HZ = FZ*CPS;
-                                } else {
-                                    HX = FX*CPS**X_SC;
-                                    HY = FY*CPS**X_SC;
-                                    HZ = FZ*CPS**X_SC;
-                                }
-                            }
-                        } else {
-                            FX = -SPS*SQQS*EQS*CYQI*CZSK*FAC_SC;
-                            FY = SPS/Q*EQS*SYQI*CZSK*FAC_SC;
-                            FZ = SPS/S*EQS*CYQI*SZSK*FAC_SC;
-                            if(l == 1){
-                                if(m == 1){
-                                    HX = FX;
-                                    HY = FY;
-                                    HZ = FZ;
-                                } else {
-                                    HX = FX**X_SC;
-                                    HY = FY**X_SC;
-                                    HZ = FZ**X_SC;
-                                }
-                            } else {
-                                if(m == 1){
-                                    HX = FX*S3PS;
-                                    HY = FY*S3PS;
-                                    HZ = FZ*S3PS;
-                                } else {
-                                    HX = FX*S3PS**X_SC;
-                                    HY = FY*S3PS**X_SC;
-                                    HZ = FZ*S3PS**X_SC;
-                                }
-                            }
-                        }
+        for(int k = 1; k <= 3; k++){
+            const double R = A[74+k];
+            const double Z1R = Z1 / R;
+            const double SZRK = sin(Z1R);
+            const double CZRK = cos(Z1R);
+            const double SQPR = sqrt(P_SQPR + 1./ (R * R));
+            const double EPR = exp(X1*SQPR);
 
-                        L = L + 1;
-                        if(i == 1){
-                            HXR = HX*CT1 + HZ*ST1;
-                            HZR = -HX*ST1 + HZ*CT1;
-                        } else {
-                            HXR = HX*CT2 + HZ*ST2;
-                            HZR = -HX*ST2 + HZ*CT2;
-                        }
+            const double FX = -SQPR*EPR*CYPI*SZRK*FAC_SC;
+            const double FY = EPR*SYPI*SZRK/P*FAC_SC;
+            const double FZ = -EPR*CYPI*CZRK/R*FAC_SC;
+            
+            double HX = FX;
+            double HY = FY;
+            double HZ = FZ;
 
-                        GX = GX + HXR*A[L-1];
-                        GY = GY + HY*A[L-1];
-                        GZ = GZ + HZR*A[L-1];
-                    }
-                }
-            }
+            double HXR = HX*CT1 + HZ*ST1;
+            double HZR = -HX*ST1 + HZ*CT1;
+            GX = GX + HXR*A[L - 3];
+            GY = GY + HY*A[L - 3];
+            GZ = GZ + HZR*A[L - 3];
+
+            HX = FX**X_SC;
+            HY = FY**X_SC;
+            HZ = FZ**X_SC;
+
+            HXR = HX*CT1 + HZ*ST1;
+            HZR = -HX*ST1 + HZ*CT1;
+            GX = GX + HXR*A[L - 2];
+            GY = GY + HY*A[L - 2];
+            GZ = GZ + HZR*A[L - 2];
+
+            HX = FX*CPS;
+            HY = FY*CPS;
+            HZ = FZ*CPS;
+
+            HXR = HX*CT1 + HZ*ST1;
+            HZR = -HX*ST1 + HZ*CT1;
+            GX = GX + HXR*A[L - 1];
+            GY = GY + HY*A[L - 1];
+            GZ = GZ + HZR*A[L - 1];
+
+            const double CPS_X_SC = CPS * *X_SC;
+            HX = FX*CPS_X_SC;
+            HY = FY*CPS_X_SC;
+            HZ = FZ*CPS_X_SC;
+
+            HXR = HX*CT1 + HZ*ST1;
+            HZR = -HX*ST1 + HZ*CT1;
+            GX = GX + HXR*A[L];
+            GY = GY + HY*A[L];
+            GZ = GZ + HZR*A[L];    
+
+            L += 4;          
+        }
+    }
+
+    for(int j = 1; j <= 3; j++) {
+        const double Q = A[77+j];
+        const double YQ = *Y / Q;
+        const double SYQI = sin(YQ);
+        const double CYQI = cos(YQ);
+        const double Q_SQQS = 1./ (Q * Q);
+
+        for(int k = 1; k <= 3; k++){
+            const double S = A[80+k];
+            const double Z2S = Z2 / S;
+            const double SZSK = sin(Z2S);
+            const double CZSK = cos(Z2S);
+            const double SQQS = sqrt(Q_SQQS + 1./ (S * S));
+            const double EQS = exp(X2*SQQS);
+
+            const double FX = -SPS*SQQS*EQS*CYQI*CZSK*FAC_SC;
+            const double FY = SPS/Q*EQS*SYQI*CZSK*FAC_SC;
+            const double FZ = SPS/S*EQS*CYQI*SZSK*FAC_SC;
+
+            double HX = FX;
+            double HY = FY;
+            double HZ = FZ;
+
+            double HXR = HX*CT2 + HZ*ST2;
+            double HZR = -HX*ST2 + HZ*CT2;
+            GX = GX + HXR*A[L - 3];
+            GY = GY + HY*A[L - 3];
+            GZ = GZ + HZR*A[L - 3];
+
+            HX = FX**X_SC;
+            HY = FY**X_SC;
+            HZ = FZ**X_SC;
+
+            HXR = HX*CT2 + HZ*ST2;
+            HZR = -HX*ST2 + HZ*CT2;
+            GX = GX + HXR*A[L - 2];
+            GY = GY + HY*A[L - 2];
+            GZ = GZ + HZR*A[L - 2];
+
+            HX = FX*S3PS;
+            HY = FY*S3PS;
+            HZ = FZ*S3PS;
+
+            HXR = HX*CT2 + HZ*ST2;
+            HZR = -HX*ST2 + HZ*CT2;
+            GX = GX + HXR*A[L - 1];
+            GY = GY + HY*A[L - 1];
+            GZ = GZ + HZR*A[L - 1];
+
+            const double S3PS_X_SC = S3PS * *X_SC;
+            HX = FX*S3PS_X_SC;
+            HY = FY*S3PS_X_SC;
+            HZ = FZ*S3PS_X_SC;
+
+            HXR = HX*CT2 + HZ*ST2;
+            HZR = -HX*ST2 + HZ*CT2;
+            GX = GX + HXR*A[L];
+            GY = GY + HY*A[L];
+            GZ = GZ + HZR*A[L];
+
+            L += 4;              
         }
     }
 

@@ -1,3 +1,5 @@
 .vscode/
 build/
 .gitignore
+volume/
+data/

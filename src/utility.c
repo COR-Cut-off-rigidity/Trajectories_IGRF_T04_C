@@ -13,28 +13,42 @@ void throwError(char *error){
     exit(-1);
 }
 
-double custom_pow(double x, int m) {
-    unsigned int n = m < 0 ? -m : m;
-    double y = n % 2 ? x : 1;
-    while (n >>= 1u){
+/* Does not support negative exponent */
+
+double custom_pow(double x, unsigned int m) {
+    if(m == 2) {
+        return x*x;
+    }
+
+    if(m == 3) {
+        return x*x*x;
+    }
+
+    double y = m % 2 ? x : 1;
+    while (m >>= 1u){
         x = x * x;
-        if (n % 2){
+        if (m % 2){
             y = y * x;
         }
     }
-    return m < 0 ? 1/y : y;
+    return y;
 }
 
-float custom_powf(float x, int m) {
-    unsigned int n = m < 0 ? -m : m;
-    float y = n % 2 ? x : 1;
-    while (n >>= 1u){
+/* Does not support negative exponent */
+
+float custom_powf(float x, unsigned int m) {
+    if(m == 2) {
+        return x*x;
+    }
+
+    float y = m % 2 ? x : 1;
+    while (m >>= 1u){
         x = x * x;
-        if (n % 2){
+        if (m % 2){
             y = y * x;
         }
     }
-    return m < 0 ? 1/y : y;
+    return y;
 }
 
 void set_rmx_value(int *nza, float *rmx_value, const double *rig){
@@ -110,20 +124,7 @@ void geogsm(float *XGEO, float *YGEO, float *ZGEO, float *XGSM, float *YGSM, flo
 void geogsm_b(float *XGEO, float *YGEO, float *ZGEO, float *XGSM, float *YGSM, float *ZGSM, int J,
             const float *A1, const float *A2, const float *A3){
 
-    #ifndef TRAJ_TEST
-    
-    if(J > 0){
-        *XGSM = A1[0]**XGEO + A1[1]**YGEO + A1[2]**ZGEO;
-        *YGSM = A2[0]**XGEO + A2[1]**YGEO + A2[2]**ZGEO;
-        *ZGSM = A3[0]**XGEO + A3[1]**YGEO + A3[2]**ZGEO;
-    } else {
-        *XGEO = A1[0]**XGSM + A2[0]**YGSM + A3[0]**ZGSM;
-        *YGEO = A1[1]**XGSM + A2[1]**YGSM + A3[1]**ZGSM;
-        *ZGEO = A1[2]**XGSM + A2[2]**YGSM + A3[2]**ZGSM;
-    }
-
-    #else
-
+#ifdef TRAJ_TEST
     if(J > 0){
         *XGSM = DEF_BX;
         *YGSM = DEF_BY;
@@ -133,8 +134,17 @@ void geogsm_b(float *XGEO, float *YGEO, float *ZGEO, float *XGSM, float *YGSM, f
         *YGEO = DEF_BY;
         *ZGEO = DEF_BZ;
     }
-
-    #endif
+#else
+    if(J > 0){
+        *XGSM = A1[0]**XGEO + A1[1]**YGEO + A1[2]**ZGEO;
+        *YGSM = A2[0]**XGEO + A2[1]**YGEO + A2[2]**ZGEO;
+        *ZGSM = A3[0]**XGEO + A3[1]**YGEO + A3[2]**ZGEO;
+    } else {
+        *XGEO = A1[0]**XGSM + A2[0]**YGSM + A3[0]**ZGSM;
+        *YGEO = A1[1]**XGSM + A2[1]**YGSM + A3[1]**ZGSM;
+        *ZGEO = A1[2]**XGSM + A2[2]**YGSM + A3[2]**ZGSM;
+    }
+#endif
 
 }
 
@@ -154,7 +164,7 @@ void calculate_trajectory_point(FILE* outfil, const double *rig, const float *th
     }
 
     #pragma omp ordered
-    fprintf(outfil, "  %f\t%.10lf\t%.6f\t%.3f\t%.3f\t%.3f\t%.3f\t%f\t%.2f\n",
+    fprintf(outfil, "%10.6f%15.10f%12.6f%10.3f%10.3f%10.3f%10.3f%12.6f%16.2f\n",
             *rig, *vv / *c, *r, *td, *fei, ast, asf, *time, *alength/1000.f);
 
 }
@@ -193,6 +203,6 @@ void calculate_cutoff(FILE* outfil, const float *rmx1, const float *rmx2, const 
     float rms = *rmi + zan**del;
     rmx = rmx + *del;
 
-    fprintf(outfil, "  CUTOFF with rigidities P(S),P(C),P(M) are:\n\t%.5f\t\t%.5f\t\t%.5f\n", *rmi, rmx, rms);
+    fprintf(outfil, "  CUTOFF with rigidities P(S),P(C),P(M) are:\n%12.5f%12.5f%12.5f\n\n", *rmi, rmx, rms);
 
 }

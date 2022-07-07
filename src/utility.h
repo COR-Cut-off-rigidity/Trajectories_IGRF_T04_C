@@ -13,9 +13,9 @@
 
 void throwError(char *error);
 
-double custom_pow(double x, int m);
+double custom_pow(double x, unsigned int m);
 
-float custom_powf(float x, int m);
+float custom_powf(float x, unsigned int m);
 
 void set_rmx_value(int *nza, float *rmx_value, const double *rig);
 

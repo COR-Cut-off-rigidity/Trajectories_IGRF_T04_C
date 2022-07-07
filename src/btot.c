@@ -15,8 +15,11 @@
 void btot(const float *X, const float *Y, const float *Z, const float *G, const float *H, const float *REC,
           const float *A1, const float *A2, const float *A3, const float *PARMOD, float *BX, float *BY, float *BZ){
 
-    #ifndef TRAJ_TEST
-
+#ifdef TRAJ_TEST
+    *BX = DEF_BX;
+    *BY = DEF_BY;
+    *BZ = DEF_BZ;
+#else
     float PS = 0.f, BXEXT, BYEXT, BZEXT;
     T04_s(PARMOD, &PS, X, Y, Z, &BXEXT, &BYEXT, &BZEXT);
     float HX, HY, HZ;
@@ -24,14 +27,7 @@ void btot(const float *X, const float *Y, const float *Z, const float *G, const 
     *BX = HX + BXEXT;
     *BY = HY + BYEXT;
     *BZ = HZ + BZEXT;
-
-    #else
-
-    *BX = DEF_BX;
-    *BY = DEF_BY;
-    *BZ = DEF_BZ;
-    
-    #endif
+#endif
 
     // IGRF print
     /* float F = sqrtf(HX*HX + HY*HY + HZ*HZ);
