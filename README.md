@@ -10,9 +10,9 @@ Program uses **Tsyganenko 04** model for simulating Earth's external geomagnetic
 
 For building your own executable binary, you need to have installed the following prerequisites:
 
-- [CMake](https://cmake.org/) - v2.8.10 or newer
+- [CMake](https://cmake.org/) - v3.10 or newer
 - [Make](https://www.gnu.org/software/make/) - v4.2.1 or newer
-- [GCC](https://gcc.gnu.org/) - v9.3 (recommended)
+- [GCC](https://gcc.gnu.org/) - v9.3 or newer
 
 Assuming you have already cloned this repository (or downloaded and extracted ZIP archive):
 

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.10)
+cmake_minimum_required(VERSION 3.10)
 project(Trajectories_IGRF_T04_C C)
 
 # =============================
