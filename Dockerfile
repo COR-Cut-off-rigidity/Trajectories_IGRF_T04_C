@@ -1,4 +1,4 @@
-FROM debian:11
+FROM debian:12
 
 WORKDIR /usr/src/Trajectories_IGRF_T04_C
 
