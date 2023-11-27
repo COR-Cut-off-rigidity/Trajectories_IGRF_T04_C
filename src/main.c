@@ -239,8 +239,8 @@ int main(int argc, char *argv[]) {
             }
 #endif
 #else // TRAJ_TEST
-            if(r > 25.f || paus > 1.f){
-                if((r > 25.f && fabsf(r - 25.f) < 0.002f) || (r <= 25.f && paus > 1.f && fabsf(paus - 1.f) < 0.002f)){
+            if(r >= 25.f || paus > 1.f){
+                if((r >= 25.f && fabsf(r - 25.f) < 0.002f) || (r <= 25.f && paus > 1.f && fabsf(paus - 1.f) < 0.002f)){
                     #pragma omp atomic write
                     rmi = fminf(rmi, threadRig);
                     #pragma omp ordered

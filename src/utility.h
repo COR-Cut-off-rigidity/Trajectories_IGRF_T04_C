@@ -5,7 +5,7 @@
 #ifndef PARTICLE_TRAJECTORIES_CALCULATIONS_UTILITY_H
 #define PARTICLE_TRAJECTORIES_CALCULATIONS_UTILITY_H
 
-#include <bits/types/FILE.h>
+#include <stdio.h>
 
 #ifndef DEF_TU
 #define DEF_TU 0.01f
