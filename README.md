@@ -99,10 +99,10 @@ Environment variables:
 -1.00
 ```
 
-1. Line: starting rigidity; type of particle (-1 for proton); ending rigidity
-2. Line: radius in `Re` - (Earth's radius); geographic latitude and longitude (of the starting point of the trajectory)
-3. Line: geographic latitude and longitude for the incoming direction of the particle
-4. Line: year; month; day; day in year; hours; minutes; seconds
+1. Line: starting rigidity in GV; type of particle (-1 for proton); ending rigidity in GV
+2. Line: radius in `Re` - (Earth's radius); geocentric latitude and longitude (of the starting point of the trajectory)
+3. Line: geocentric latitude and longitude for the incoming direction of the particle
+4. Line: year; month; day; day in year; hours; minutes; seconds in UTC time
 5. Line: First 3 numbers - parameters for trajectory division; rigidity step
 6. Line: `Dst` index (in `nT`); `pdyn` - dynamic pressure of solar wind (in `nPa`) at given date and time; the intensity of `y` and `z` components of the interplanetary field at a given date and time
 7. Line: W1 - W6 input parameters for external geomagnetic field model (Tsyganenko) which describes the prehistory of the geomagnetic field.
@@ -129,10 +129,21 @@ calculated by model of exter.field T05
 3.50000 3.90000 3.80000
 ```
 
-This file consists of 2 parts:
+This file consists of 3 parts:
 
 -   Header - contains simulation metadata (geographic coordinates, date and time, Epsilon - step in rigidity, the maximum number of steps used for backtracing of one trajectory)
--   Calculated data - contains trajectory parameters of cosmic rays particle with given rigidity in a given time and location. The last line of the outfile includes 3 values, which describe lower, upper, and effective cutoff rigidity.
+-   Calculated data - contains trajectory parameters of cosmic rays particles with given rigidity [GV] in a given time and location.
+1. column - rigidity in GV
+2. column - velocity of a particle in light speed units
+3. radius of escape points in Re units
+4. rad - radius of "end point" (at magnetopause or in the tail at the sphere with radius 25 Re) in the geocentric coordinate system
+5. eth - latitude of "end point" in the geocentric coordinate system
+6. efi - longitude of "end point" in the geocentric coordinate system
+7. column - latitude of asymptotic direction in the geocentric coordinate system
+8. column - longitude of asymptotic direction in the geocentric coordinate system
+9. column - time spent by particle on the whole trajectory from starting till end point in seconds
+10. column - length of the whole trajectory from starting to end point in [km]
+-   Footer - The last line of the outfile includes 3 values, which describe lower, upper, and effective cutoff rigidity in GV.
 
 ## Program flowchart
 
