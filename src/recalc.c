@@ -55,7 +55,7 @@ void recalc(int igrfCoefsVersion, int iyear, const int *iday, const int *ihour, 
     const float SQQ = sqrtf(SQ);
     const float SQR = sqrtf(custom_powf(G10, 2) + SQ);
 
-    float GST, SLONG, SRASN, SDEC;
+    float GST = 0.f, SLONG = 0.f, SRASN = 0.f, SDEC = 0.f;
     sun(&iyear, iday, ihour, min, isec, &GST, &SLONG, &SRASN, &SDEC);
 
     const float CT0 = G10/SQR;

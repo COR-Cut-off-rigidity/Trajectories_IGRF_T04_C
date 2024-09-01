@@ -51,7 +51,7 @@ set(TU 0.01f)
 
 # =============================
 
-set(CMAKE_C_FLAGS "-Wall -Werror -O2") # -mavx2 -mavx -march=native
+set(CMAKE_C_FLAGS "-Wall -Werror -O3 -fno-math-errno -fno-trapping-math -ffp-contract=off -march=native -finline-limit=300")
 
 find_package(OpenMP)
 if (OPENMP_FOUND)
