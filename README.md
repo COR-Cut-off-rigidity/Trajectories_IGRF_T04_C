@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+> This project is no longer maintained. Please use its successor, **[COR-Engine](https://github.com/COR-Cut-off-rigidity/cor-model)**. It supports newer field models and extra calculation modes, and it reads the same input files.
+
 # Trajectory simulation of cosmic rays in the Earth's magnetosphere
 
 This program produces calculated values of cut-off rigidities for cosmic ray trajectories, which describe a spectrum of allowed and forbidden rigidities.
